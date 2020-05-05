@@ -17,7 +17,8 @@ if strcmp(option,'TRACK_PAIRS')
         load('rate_remapping_analysis_TRACK_PAIRS');
     end
     
-    f1.Name= varargin{1};
+    foldername = strsplit(pwd,'\');
+    f1.Name= strcat(varargin{1},'_',foldername{7});
     
     for epoch=1:size(remapping,1)
         data_across_tracks(epoch).place_field_diff=[];
@@ -69,16 +70,20 @@ if strcmp(option,'TRACK_PAIRS')
     
     subplot(2,2,1)
     title(['sleep- PRE nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(1))])
-    ylabel('firing rate difference during replay between tracks')
+    ylabel([{'Average spike number difference during replay between tracks'}; {'divided by number of events cell was active in)'}])
     xlabel('place field peak response difference between tracks')
     subplot(2,2,2)
-    title('sleep- POST nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(2))])
-    ylabel('firing rate difference during replay between tracks')
+    title(['sleep- POST nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(2))])
+    ylabel([{'Average spike number difference during replay between tracks'}; {'divided by number of events cell was active in)'}])
     xlabel('place field peak response difference between tracks')
     subplot(2,2,3)
     title(['sleep- PRE, pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF(1))])
+    ylabel('Average spike number difference during replay between tracks')
+    xlabel('place field peak response difference between tracks')
     subplot(2,2,4)
     title(['sleep- POST, pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF(2))])
+    ylabel('Average spike number difference during replay between tracks')
+    xlabel('place field peak response difference between tracks')
 end
 
 

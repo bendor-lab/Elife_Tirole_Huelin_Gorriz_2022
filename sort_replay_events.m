@@ -10,6 +10,8 @@ else
             if exist('significant_replay_events_wcorr.mat')==2
                 load significant_replay_events_wcorr
 %                 significant_replay_events= significant_events_wcorr;
+            elseif exist('significant_replay_events_wcorr_individual_exposures.mat')==2
+                load significant_replay_events_wcorr_individual_exposures
             else
                 disp('wcorr not found, loading default')
                 load significant_replay_events;
@@ -18,8 +20,10 @@ else
             if exist('significant_replay_events_spearman.mat')==2
                 load significant_replay_events_spearman
 %                 significant_replay_events= significant_events_spearman;
+            elseif exist('significant_replay_events_spearman_individual_events.mat')==2
+                load significant_replay_events_spearman_individual_events
             else
-                disp('wcorr not found, loading default')
+                disp('spearman not found, loading default')
                 load significant_replay_events;
             end
         otherwise
@@ -52,17 +56,14 @@ time_range.awake=[time_range.pre(1) sleep_stop; sleep_start max(position.t)];
 total_time_asleep=sum(time_range.sleep(2,:)-time_range.sleep(1,:))/60
 total_time_awake=sum(time_range.awake(2,:)-time_range.awake(1,:))/60
 
-% Find sleep and awake times for PRE
 index=find(time_range.sleep(1,:)>=time_range.pre(1) & time_range.sleep(1,:)<time_range.pre(2));
 time_range.sleepPRE=time_range.sleep(:,index);
 index=find(time_range.awake(1,:)>=time_range.pre(1) & time_range.awake(1,:)<time_range.pre(2));
 time_range.awakePRE=time_range.awake(:,index);
-
 %adjust for final time when animal is put on track
 time_range.awakePRE(find(time_range.awakePRE>time_range.pre(2)))=time_range.pre(2);
 time_range.sleepPRE(find(time_range.sleepPRE>time_range.pre(2)))=time_range.pre(2);
 
-% Find sleep and awake times for POST 
 index=find(time_range.sleep(2,:)>=time_range.post(1) & time_range.sleep(1,:)<=time_range.post(2));
 time_range.sleepPOST=time_range.sleep(:,index);
 index=find(time_range.awake(2,:)>=time_range.post(1) & time_range.awake(1,:)<=time_range.post(2));
@@ -165,17 +166,12 @@ end
 end
 
 function cumulative_time=compute_cumulative_time(time)
-% Takes start and end times for a specific period (e.g. PRE sleep), normalized it to the start of the sleep epoch within the sleep period and 
-% then calculates cummulative sum for the start and end timestamps (stacks all epochs together)
-
 cumulative_time=time-time(1,:); %normalize by epoch start
-cumulative_time(2,:)=cumsum(cumulative_time(2,:));  %cummulative sum of stop times
+cumulative_time(2,:)=cumsum(cumulative_time(2,:));
 cumulative_time(1,2:end)=cumulative_time(2,1:(end-1));
 end
 
 function cumulative_event_times=interpolate_cumulative_time(cumulative_time,time, event_times)
-% Interpolate replay event times to cumulative time
-
 if isempty(time)
     cumulative_event_times=NaN;
 else
