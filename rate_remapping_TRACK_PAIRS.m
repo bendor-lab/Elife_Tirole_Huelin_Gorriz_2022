@@ -90,7 +90,7 @@ for epoch = 1 : 7 % PRE & POST, sleep and awake
 end
 cd(master_folder);
 
-for i = 1 : size(folders,1)
+for i = 1 : length(folders)
     cd(folders{i});
     data = compare_replay_across_tracks(method);
     for this_epoch=1:7
