@@ -174,6 +174,7 @@ for track_pair = 1:size(remapping,2)
              if ~isempty(index_non_NaNs)
                     lm = fitlm(remapping(epoch_idx(this_epoch),track_pair).(x_var{this_var_pair})(index_non_NaNs),...
                         remapping(epoch_idx(this_epoch),track_pair).(y_var{this_var_pair})(index_non_NaNs),'linear');
+                    %[pval(this_epoch,this_var_pair),F(this_epoch,this_var_pair),~] = coefTest(lm);
                     [pval(this_epoch,this_var_pair,track_pair),F(this_epoch,this_var_pair,track_pair),~] = coefTest(lm);
                     x=[min(remapping(epoch_idx(this_epoch),track_pair).(x_var{this_var_pair})(common_subset_cells_ind)) max(remapping(epoch_idx(this_epoch),track_pair).(x_var{this_var_pair})(common_subset_cells_ind))];
                     b=lm.Coefficients.Estimate';
@@ -182,7 +183,7 @@ for track_pair = 1:size(remapping,2)
                     slope_intcpt_lm(this_epoch,this_var_pair,:,track_pair)= fliplr(b);
                     
                     %title([epochs{this_epoch} ', pval= ' num2str(pval(this_epoch,this_var_pair),2)]);
-                    title([epochs{this_epoch}]);z
+                    title([epochs{this_epoch}]);
                     %text(ax(subplot_counter),.7,0.1,['p = ' num2str(pval(this_epoch,this_var_pair),2)],'Units','Normalized','FontSize',12,'FontName','Arial');
                     text(ax(subplot_counter),.7,0.1,['p = ' num2str(pval(this_epoch,this_var_pair,track_pair),2)],'Units','Normalized','FontSize',12,'FontName','Arial');
 
