@@ -1,7 +1,6 @@
 % BATCH ANALYSIS PIPELINE
 function remapping_pipeline(option,RExp)
 
-
 % EXTRACT SPIKES, WAVEFORMS AND DROPPED SAMPLES
 %use one of these depending on how you clustered
 if strcmp(option,'EXTRACT_SPIKES_MARTA')
@@ -141,7 +140,74 @@ if strcmp(option,'REPLAY')
         number_of_significant_replays(0.05,3,'spearman',2); % pval, ripple zscore, method, reexposure
     end
 end
+if strcmp(option,'SHUFFLES') % SHUFFLES & SCORING ONLY
+        disp('scoring replay events')
+        load('decoded_replay_events.mat');
+        scored_replay = replay_scoring(decoded_replay_events,[0 1 0 0]); % weighted corr  
+        save scored_replay scored_replay;
 
+        % RUN SHUFFLES
+        tic;
+        disp('running shuffles')
+        num_shuffles=1000;
+        analysis_type=[0 1 0 0];  %just weighted correlation 
+        p = gcp; % Starting new parallel pool
+        shuffle_choice={'PRE spike_train_circular_shift','PRE place_field_circular_shift', 'POST place bin circular shift'};
+        tic
+        if ~isempty(p)
+            for shuffle_id=1:length(shuffle_choice)
+                shuffle_type{shuffle_id}.shuffled_track = parallel_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events);
+            end
+        else
+            disp('parallel processing not possible');
+            for shuffle_id=1:length(shuffle_choice)
+                shuffle_type{shuffle_id}.shuffled_track = run_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events);
+            end
+        end
+        save shuffled_tracks shuffle_type;
+        disp('time to run shuffles was...');
+        toc
+        % Evaluate significance
+        load('scored_replay.mat');
+        load('shuffled_tracks.mat');
+        scored_replay= replay_significance(scored_replay, shuffle_type);
+        save scored_replay scored_replay
+
+        %%%%%%analyze segments%%%%%%%%%%
+        % splitting replay events
+        tic
+        replay_decoding_split_events('replay_rate_shuffle');
+        load decoded_replay_events_segments;
+        scored_replay1 = replay_scoring(decoded_replay_events1,[0 1 0 0]);
+        scored_replay2 = replay_scoring(decoded_replay_events2,[0 1 0 0]);
+        save scored_replay_segments scored_replay1 scored_replay2;
+        num_shuffles=1000;
+        analysis_type=[0 1 0 0];  %just weighted correlation
+
+        load decoded_replay_events_segments;
+        p = gcp; % Starting new parallel pool
+        if ~isempty(p)
+            for shuffle_id=1:length(shuffle_choice)
+                shuffle_type1{shuffle_id}.shuffled_track = parallel_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events1);
+                shuffle_type2{shuffle_id}.shuffled_track = parallel_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events2);
+            end
+        else
+            disp('parallel processing not possible');
+            for shuffle_id=1:length(shuffle_choice)
+                shuffle_type1{shuffle_id}.shuffled_track = run_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events1);
+                shuffle_type2{shuffle_id}.shuffled_track = run_shuffles(shuffle_choice{shuffle_id},analysis_type,num_shuffles,decoded_replay_events2);
+            end
+        end
+
+        save shuffled_tracks_segments shuffle_type1 shuffle_type2;
+
+        load scored_replay_segments; load shuffled_tracks_segments;
+        scored_replay1=replay_significance(scored_replay1, shuffle_type1);
+        scored_replay2=replay_significance(scored_replay2, shuffle_type2);
+        save scored_replay_segments scored_replay1 scored_replay2
+        disp('running segments took...')
+        toc
+end
 if strcmp(option,'ANALYSIS')
     % load scored_replay;
     if isempty(RExp)
@@ -167,8 +233,7 @@ if strcmp(option,'ANALYSIS')
     
     plot_rate_remapping('TRACK_PAIRS','spearman');
     plot_rate_remapping('TRACK_PAIRS','wcorr');
-
-    
+  
 
 end
 

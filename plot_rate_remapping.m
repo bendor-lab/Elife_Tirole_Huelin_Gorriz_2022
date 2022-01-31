@@ -1,6 +1,5 @@
 function plot_rate_remapping(option,varargin)
-f1= figure;
-current_figure_handle=gcf;
+f1= figure('units','normalized','outerposition',[0 0 1 1]);
 parameters=list_of_parameters;
 if strcmp(option,'TRACK_PAIRS')
     
@@ -14,24 +13,29 @@ if strcmp(option,'TRACK_PAIRS')
                 load('rate_remapping_analysis_TRACK_PAIRS');
         end
     else
+        varargin{1}=[];
         load('rate_remapping_analysis_TRACK_PAIRS');
     end
     
-    f1.Name= varargin{1};
+    foldername = strsplit(pwd,'\');
+    f1.Name= strcat(varargin{1},'_',foldername{7});
     
     for epoch=1:size(remapping,1)
         data_across_tracks(epoch).place_field_diff=[];
         data_across_tracks(epoch).mean_spike_diff=[];
         data_across_tracks(epoch).mean_spike_diff_nonZero=[];
         data_across_tracks(epoch).track_id=[];
-        for track_pair=1:size(remapping,2)
-            figure(current_figure_handle)
+        for track_pair = 1:size(remapping,2)
+            [~,common_PRE_Post_indx,~] = intersect(remapping(epoch,track_pair).ID_active_cells_during_replay,remapping(epoch,track_pair).PRE_to_POST_active_cells);
+            figure(f1)
             subplot(size(remapping,1),2,epoch)
             plot(remapping(epoch,track_pair).place_field_diff, remapping(epoch,track_pair).replay_spike_diff_nonZero,parameters.plot_color_symbol{track_pair});
             hold on
+            plot(remapping(epoch,track_pair).place_field_diff(common_PRE_Post_indx), remapping(epoch,track_pair).replay_spike_diff_nonZero(common_PRE_Post_indx),'k*');
             subplot(size(remapping,1),2,epoch+2)
             plot(remapping(epoch,track_pair).place_field_diff, remapping(epoch,track_pair).replay_spike_diff,parameters.plot_color_symbol{track_pair});
             hold on
+            plot(remapping(epoch,track_pair).place_field_diff(common_PRE_Post_indx), remapping(epoch,track_pair).replay_spike_diff(common_PRE_Post_indx),'k*');
             
            % index=find(abs(remapping(epoch,track_pair).place_field_centre_diff)<=10);  %place field centres less than 20 cm apart
            % plot(remapping(epoch,track_pair).place_field_diff(index), remapping(epoch,track_pair).replay_spike_diff(index),'k.');
@@ -69,16 +73,20 @@ if strcmp(option,'TRACK_PAIRS')
     
     subplot(2,2,1)
     title(['sleep- PRE nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(1))])
-    ylabel('firing rate difference during replay between tracks')
+    ylabel([{'Average spike number difference during replay between tracks'}; {'divided by number of events cell was active in)'}])
     xlabel('place field peak response difference between tracks')
     subplot(2,2,2)
-    title('sleep- POST nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(2))])
-    ylabel('firing rate difference during replay between tracks')
+    title(['sleep- POST nonzero , pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF_nonZero(2))])
+    ylabel([{'Average spike number difference during replay between tracks'}; {'divided by number of events cell was active in)'}])
     xlabel('place field peak response difference between tracks')
     subplot(2,2,3)
     title(['sleep- PRE, pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF(1))])
+    ylabel('Average spike number difference during replay between tracks')
+    xlabel('place field peak response difference between tracks')
     subplot(2,2,4)
     title(['sleep- POST, pval= ' num2str(linear_fit_P_values_RATE_VS_PEAK_PF(2))])
+    ylabel('Average spike number difference during replay between tracks')
+    xlabel('place field peak response difference between tracks')
 end
 
 

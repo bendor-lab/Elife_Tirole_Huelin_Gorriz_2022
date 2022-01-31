@@ -1,6 +1,6 @@
 function [sorted_replay,time_range]=sort_replay_events(option,varargin)
 % option is [] if no reexposure, and a vector for reexposures, e.g. [ 1 3 ; 2 4 ]
-% varargin can be 'wcorr' or 'spearman' 
+% varargin can be 'wcorr', 'spearman' ,'control_fixed_spike' or 'rate_detection_control'
 
 if isempty(varargin)
     load significant_replay_events;
@@ -10,6 +10,8 @@ else
             if exist('significant_replay_events_wcorr.mat')==2
                 load significant_replay_events_wcorr
 %                 significant_replay_events= significant_events_wcorr;
+            elseif exist('significant_replay_events_wcorr_individual_exposures.mat')==2
+                load significant_replay_events_wcorr_individual_exposures
             else
                 disp('wcorr not found, loading default')
                 load significant_replay_events;
@@ -18,13 +20,33 @@ else
             if exist('significant_replay_events_spearman.mat')==2
                 load significant_replay_events_spearman
 %                 significant_replay_events= significant_events_spearman;
+            elseif exist('significant_replay_events_spearman_individual_exposures.mat')==2
+                load significant_replay_events_spearman_individual_exposures
             else
-                disp('wcorr not found, loading default')
+                disp('spearman not found, loading default')
                 load significant_replay_events;
             end
+        case 'control_fixed_spike'
+            if exist('significant_replay_events_wcorr_FIXED.mat')==2
+                load significant_replay_events_wcorr_FIXED
+            elseif exist('significant_replay_events_wcorr_individual_exposures_FIXED.mat')==2
+                load significant_replay_events_wcorr_individual_exposures_FIXED
+            else
+                disp('control_fixed_spikes not found, loading default')
+                load significant_replay_events_wcorr;
+            end
+        case 'rate_detection_control'
+            if exist('significant_replay_events_wcorr_RATE.mat')==2
+                load significant_replay_events_wcorr_RATE
+            elseif exist('significant_replay_events_wcorr_individual_exposures_RATE.mat')==2
+                load significant_replay_events_wcorr_individual_exposures_RATE
+            else
+                disp('control_fixed_spikes not found, loading default')
+                load significant_replay_events_wcorr;
+            end
         otherwise
-                disp('did not recognise input, loading default');
-                load significant_replay_events;
+            disp('did not recognise input, loading default');
+            load significant_replay_events;
     end
 end
 
@@ -74,24 +96,40 @@ time_range.sleepPOST(find(time_range.sleepPOST<time_range.post(1)))=time_range.p
 time_range.awakePOST(find(time_range.awakePOST>time_range.post(2)))=time_range.post(2);
 time_range.sleepPOST(find(time_range.sleepPOST>time_range.post(2)))=time_range.post(2);
 
+time_range.PRE_CUMULATIVE=compute_cumulative_time(time_range.pre');
 time_range.awakePRE_CUMULATIVE=compute_cumulative_time(time_range.awakePRE);
 time_range.sleepPRE_CUMULATIVE=compute_cumulative_time(time_range.sleepPRE);
+time_range.POST_CUMULATIVE=compute_cumulative_time(time_range.post');
 time_range.awakePOST_CUMULATIVE=compute_cumulative_time(time_range.awakePOST);
 time_range.sleepPOST_CUMULATIVE=compute_cumulative_time(time_range.sleepPOST);
+for track=1:number_of_tracks
+    time_range.RUN_CUMULATIVE{track} = compute_cumulative_time(time_range.track(track).behaviour);
+end
 
 for track=1:number_of_tracks
     for j=1:number_of_tracks
         sorted_replay(track).index.track(j).behaviour=[];
+        sorted_replay(track).ref_index.track(j).behaviour=[];
     end
+    sorted_replay(track).index.PRE=[];
+    sorted_replay(track).ref_index.PRE=[];
     sorted_replay(track).index.awakePRE=[];
+    sorted_replay(track).ref_index.awakePRE=[];
     sorted_replay(track).index.sleepPRE=[];
+    sorted_replay(track).ref_index.sleepPRE=[];
+    sorted_replay(track).index.POST=[];
+    sorted_replay(track).ref_index.POST=[];
     sorted_replay(track).index.awakePOST=[];
+    sorted_replay(track).ref_index.awakePOST=[];
     sorted_replay(track).index.sleepPOST=[];
+    sorted_replay(track).ref_index.sleepPOST=[];
     for j=1:number_of_tracks
         sorted_replay(track).event_time.track(j).behaviour=[];
     end
+    sorted_replay(track).event_time.PRE=[];
     sorted_replay(track).event_time.awakePRE=[];
     sorted_replay(track).event_time.sleepPRE=[];
+    sorted_replay(track).event_time.POST=[];
     sorted_replay(track).event_time.awakePOST=[];
     sorted_replay(track).event_time.sleepPOST=[];
 end
@@ -99,27 +137,42 @@ end
 for track=1:number_of_tracks
     event_times=significant_replay_events.track(track).event_times;
     for j=1:length(event_times)
-%         index=j;
-        index= significant_replay_events.track(track).ref_index(j);
+        index = j;
+        ref_index = significant_replay_events.track(track).ref_index(j);
         for k=1:number_of_tracks
             if check_if_event_is_in_time_window(event_times(j),time_range.track(k).behaviour)
                 sorted_replay(track).index.track(k).behaviour=[sorted_replay(track).index.track(k).behaviour index];
+                sorted_replay(track).ref_index.track(k).behaviour=[sorted_replay(track).ref_index.track(k).behaviour ref_index];
                 sorted_replay(track).event_time.track(k).behaviour=[sorted_replay(track).event_time.track(k).behaviour event_times(j)];
             end
         end
+        if check_if_event_is_in_time_window(event_times(j),time_range.pre')
+            sorted_replay(track).index.PRE=[sorted_replay(track).index.PRE index];
+            sorted_replay(track).ref_index.PRE=[sorted_replay(track).ref_index.PRE ref_index];
+            sorted_replay(track).event_time.PRE=[sorted_replay(track).event_time.PRE event_times(j)];
+        end
         if check_if_event_is_in_time_window(event_times(j),time_range.awakePRE)
             sorted_replay(track).index.awakePRE=[sorted_replay(track).index.awakePRE index];
+            sorted_replay(track).ref_index.awakePRE=[sorted_replay(track).ref_index.awakePRE ref_index];
             sorted_replay(track).event_time.awakePRE=[sorted_replay(track).event_time.awakePRE event_times(j)];
         end
         if check_if_event_is_in_time_window(event_times(j),time_range.sleepPRE)
             sorted_replay(track).index.sleepPRE=[sorted_replay(track).index.sleepPRE index];
+            sorted_replay(track).ref_index.sleepPRE=[sorted_replay(track).ref_index.sleepPRE ref_index];
             sorted_replay(track).event_time.sleepPRE=[sorted_replay(track).event_time.sleepPRE event_times(j)];
+        end
+        if check_if_event_is_in_time_window(event_times(j),time_range.post')
+            sorted_replay(track).index.POST=[sorted_replay(track).index.POST index];
+            sorted_replay(track).ref_index.POST=[sorted_replay(track).ref_index.POST ref_index];
+            sorted_replay(track).event_time.POST=[sorted_replay(track).event_time.POST event_times(j)];
         end
         if check_if_event_is_in_time_window(event_times(j),time_range.awakePOST)
             sorted_replay(track).index.awakePOST=[sorted_replay(track).index.awakePOST index];
+            sorted_replay(track).ref_index.awakePOST=[sorted_replay(track).ref_index.awakePOST ref_index];
             sorted_replay(track).event_time.awakePOST=[sorted_replay(track).event_time.awakePOST event_times(j)];
         end
         if check_if_event_is_in_time_window(event_times(j),time_range.sleepPOST)
+            sorted_replay(track).ref_index.sleepPOST=[sorted_replay(track).ref_index.sleepPOST ref_index];
             sorted_replay(track).index.sleepPOST=[sorted_replay(track).index.sleepPOST index];
             sorted_replay(track).event_time.sleepPOST=[sorted_replay(track).event_time.sleepPOST event_times(j)];
         end
@@ -127,14 +180,22 @@ for track=1:number_of_tracks
 end
 
 for track=1:number_of_tracks
+    sorted_replay(track).cumulative_event_time.PRE=interpolate_cumulative_time(time_range.PRE_CUMULATIVE,...
+        time_range.pre',sorted_replay(track).event_time.PRE);
     sorted_replay(track).cumulative_event_time.awakePRE=interpolate_cumulative_time(time_range.awakePRE_CUMULATIVE,...
         time_range.awakePRE,sorted_replay(track).event_time.awakePRE);
     sorted_replay(track).cumulative_event_time.sleepPRE=interpolate_cumulative_time(time_range.sleepPRE_CUMULATIVE,...
         time_range.sleepPRE,sorted_replay(track).event_time.sleepPRE);
+    sorted_replay(track).cumulative_event_time.POST=interpolate_cumulative_time(time_range.POST_CUMULATIVE,...
+        time_range.post',sorted_replay(track).event_time.POST);
     sorted_replay(track).cumulative_event_time.awakePOST=interpolate_cumulative_time(time_range.awakePOST_CUMULATIVE,...
         time_range.awakePOST,sorted_replay(track).event_time.awakePOST);
     sorted_replay(track).cumulative_event_time.sleepPOST=interpolate_cumulative_time(time_range.sleepPOST_CUMULATIVE,...
         time_range.sleepPOST,sorted_replay(track).event_time.sleepPOST);
+    for k=1:number_of_tracks
+        sorted_replay(track).cumulative_event_time.track(k).behaviour=interpolate_cumulative_time(time_range.RUN_CUMULATIVE{k},...
+            time_range.track(k).behaviour,sorted_replay(track).event_time.track(k).behaviour);
+    end
 end
 
 [sorted_replay(:).method]= deal(varargin{1});
@@ -148,6 +209,10 @@ else
             save sorted_replay_wcorr sorted_replay
         case 'spearman'
             save sorted_replay_spearman sorted_replay
+        case 'control_fixed_spike'
+            save sorted_replay_wcorr_FIXED sorted_replay
+        case 'rate_detection_control'
+            save sorted_replay_wcorr_RATE sorted_replay
         otherwise
             save sorted_replay sorted_replay
     end
@@ -169,7 +234,7 @@ function cumulative_time=compute_cumulative_time(time)
 % then calculates cummulative sum for the start and end timestamps (stacks all epochs together)
 
 cumulative_time=time-time(1,:); %normalize by epoch start
-cumulative_time(2,:)=cumsum(cumulative_time(2,:));  %cummulative sum of stop times
+cumulative_time(2,:)=cumsum(cumulative_time(2,:));%cummulative sum of stop times
 cumulative_time(1,2:end)=cumulative_time(2,1:(end-1));
 end
 

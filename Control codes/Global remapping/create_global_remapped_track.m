@@ -1,11 +1,15 @@
 % GLOBAL REMAPPING
 % Shuffle good place fields within a track using cell IDs from good cells from any of the tracks.
-
-function create_global_remapped_track(option)
+% option is: 'bayesian' or [] in which case it will use normal place fields
+% varargin: specify random seed or not
+function create_global_remapped_track(option,varargin)
 
 current_directory = pwd;
 parameters = list_of_parameters;
-
+if ~isempty(varargin)
+    disp('using random seed specified..')
+    rng(cell2mat(varargin{1}));
+end
 load extracted_clusters.mat
 if strcmp(option,'BAYESIAN')
     load extracted_place_fields_BAYESIAN;
@@ -34,6 +38,12 @@ for k = 1 : number_of_chimeric_tracks
     random_cell_index = randperm(length(place_fields.good_place_cells));
     random_cell = place_fields.good_place_cells(random_cell_index);
     original_cell = place_fields.good_place_cells;
+    
+    place_fields_GLOBAL_REMAPPED.id_conversion(k).original_good_cells= original_cell;
+    place_fields_GLOBAL_REMAPPED.id_conversion(k).permuted_good_cells= random_cell;
+    if ~isempty(varargin)
+      place_fields_GLOBAL_REMAPPED.seed= varargin{1};
+    end
     
     % Create a new shuffled structure, where we swap good cells (each original cells is assigned to another random cell)
     % Swap can happen between tracks (e.g. good cell from track 1 is now in track 2)
@@ -76,6 +86,10 @@ end
 
 
 %% Classify cells as good place cells, interneuron, pyramidal cells & other cells
+%interneurons classfication
+interneurons = find(place_fields_GLOBAL_REMAPPED.mean_rate > parameters.max_mean_rate);
+place_fields_GLOBAL_REMAPPED.interneurons=interneurons;
+
 good_place_cells=[]; track=[];
 for track_id=1:number_of_tracks %good cells classfication
     good_place_cells = [good_place_cells place_fields_GLOBAL_REMAPPED.track(track_id).sorted_good_cells];
@@ -97,12 +111,6 @@ for track_id = 1:number_of_tracks
 end
 place_fields_GLOBAL_REMAPPED.unique_cells = unique_cells;  % all cells that have good place fields only on a single track
 
-%interneurons classfication
-interneurons=[];
-for track_id=1:number_of_tracks
-    interneurons = [interneurons find(place_fields_GLOBAL_REMAPPED.track(track_id).mean_rate_track > parameters.max_mean_rate)];
-end
-place_fields_GLOBAL_REMAPPED.interneurons = unique(interneurons);
 
 %putative pyramidal cells classification
 putative_pyramidal_cells=[];
@@ -123,10 +131,10 @@ place_fields_GLOBAL_REMAPPED.other_cells = setdiff(other_cells,interneurons,'sta
 
 %to compare all chimeric tracks
 
-if exist('global_remapped')~=7
-    mkdir global_remapped;
-    cd global_remapped;
-end
+% if exist('global_remapped')~=7
+%     mkdir global_remapped;
+%     cd global_remapped;
+% end
 
 if strcmp(option,'BAYESIAN')
     place_fields_BAYESIAN=place_fields_GLOBAL_REMAPPED;

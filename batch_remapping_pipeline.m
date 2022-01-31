@@ -1,13 +1,19 @@
 % BATCH ANALYSIS PIPELINE
-function batch_remapping_pipeline(option)
+function batch_remapping_pipeline(folders,option)
 
-cd('Z:\BendorLab\Drobo\Neural and Behavioural Data\Rate remapping\Data')
-load folders_to_process_remapping
+% cd('X:\BendorLab\Drobo\Neural and Behavioural Data\Rate remapping\Data')
+data_folder = pwd;
+% load folders_to_process_remapping
 
-re_exposure = {'','1','1','',''};
-for sess = 5 : length(folders)
+% re_exposure = {'','1','','',''};
+re_exposure= folders(:,2);
+folders= folders(:,1);
+parameters= list_of_parameters;
 
-    cd(folders{sess})
+for sess = 1 : length(folders)
+
+    cd([data_folder '\' folders{sess}])
+    disp(folders{sess})
     RExp = re_exposure{sess};
 
     % EXTRACT SPIKES, WAVEFORMS AND DROPPED SAMPLES
@@ -16,6 +22,7 @@ for sess = 5 : length(folders)
         extract_spikes_phy; % for clusters extracted from PHY
         extract_events;
         extract_dropped_samples;
+        
         process_clusters;
         getWaveformsFromSamples;
     end
@@ -136,9 +143,12 @@ for sess = 5 : length(folders)
         disp('running segments took...')
         toc
         
+    end
+    
+    if strcmp(option,'ANALYSIS')
+        
         %%%% analyze significant replays from whole events and segmented events
         % only using replay events passing threshold for ripple power
-        
         if isempty(RExp)
             % no reexposure
             number_of_significant_replays(0.05,3,'wcorr',[]); % pval, ripple zscore, method, reexposure
@@ -149,36 +159,64 @@ for sess = 5 : length(folders)
             number_of_significant_replays(0.05,3,'spearman',2); % pval, ripple zscore, method, reexposure
         end
         
-    end
-    if strcmp(option,'ANALYSIS')
-        % load scored_replay;
+%         load scored_replay;
         if isempty(RExp)
             % no reexposure
             sort_replay_events([],'spearman');
             sort_replay_events([],'wcorr');
         else
-            % reexposure            
+            % reexposure
             sort_replay_events([1,3;2,4],'spearman');
             sort_replay_events([1,3;2,4],'wcorr');
         end
+%         
+%         % individual folders
+%         rate_remapping_TRACK_PAIRS([],'spearman');
+%         rate_remapping_TRACK_PAIRS([],'wcorr');
         
-        % individual folders
-        rate_remapping_TRACK_PAIRS([],'spearman');
-        rate_remapping_TRACK_PAIRS([],'wcorr');
+%         %all sessions
+%         load('folders_to_process_remapping.mat')
+%         rate_remapping_TRACK_PAIRS(folders,'spearman');
+%         rate_remapping_TRACK_PAIRS(folders,'wcorr');
+%         
         
-        % all sessions
-        load('folders_to_process.mat')
-        rate_remapping_TRACK_PAIRS(folders,'spearman');
-        rate_remapping_TRACK_PAIRS(folders,'wcorr');
-        
-        
-        plot_rate_remapping('TRACK_PAIRS','spearman');
-        plot_rate_remapping('TRACK_PAIRS','wcorr');
+%         plot_rate_remapping('TRACK_PAIRS','spearman');
+%         plot_rate_remapping('TRACK_PAIRS','wcorr');
     end
     
     if strcmp(option,'Global_remapping')
-        global_remapped_track_analysis(RExp);
+        % string option are 'shuffle_track', 'replay_analysis' or leave
+        % empty to redo all
+        global_remapped_track_analysis(folders{sess},RExp,parameters.rng_seed_remapping(sess),'replay_analysis');
     end
+    if strcmp(option,'Rate_remapping')
+        % string option are 'shuffle_rates', 'replay_analysis' or leave
+        % empty to redo all
+        rate_remapped_track_analysis(folders{sess},RExp,parameters.rng_seed_remapping(sess),'replay_analysis');
+    end
+    
+    if strcmp(option,'control_fixed_rate')
+        control_detection_FIXED_spike_rate(folders{sess},RExp);
+    end
+    
+     if strcmp(option,'control_fixed_count')
+        control_detection_FIXED_spike_count(folders{sess},RExp);
+    end
+    
+    if strcmp(option,'plot_FR')
+        plot_rate_remapping('FIRING_RATES','wcorr');
+    end
+    
+    if strcmp(option,'decoding_error')
+        bayesian_decoding_error('method','leave one out','bin_size',parameters.x_bins_width_bayesian);
+        bayesian_decoding_error('method','cross_tracks','bin_size',parameters.x_bins_width_bayesian);
+%         decoding_error_controls(folders{sess},'global_remap');
+%         decoding_error_controls(folders{sess},'rate_remap');
+
+        % decoding_comparison(folders,'standard','rate_remap','global_remap')
+    end
+        
+cd(data_folder)    
 end
 
 end
