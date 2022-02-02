@@ -54,7 +54,7 @@ end
 cdata= p.Results.cdata;
 epochs= p.Results.epochs;
 [~,epoch_idx]= ismember(epochs,vertcat(remapping.epoch));
-target_epoch_idx= strcmp([remapping.epoch],p.Results.target_epoch);
+target_epoch_idx= find(strcmp([remapping.epoch],p.Results.target_epoch));
 
 f1= figure('units','normalized','Color','w');
 f1.Name = [remapping(target_epoch_idx).epoch{:} '-SLEEP track correlation'];
@@ -68,7 +68,7 @@ edge_val = 15;
 
 for ep =  1 : length(epochs)
     
-    if size(remapping_raw(epoch_idx(ep)).new_ID,2) > size(remapping_raw(target_epoch_idx).new_ID,2)
+    if size(remapping_raw(epoch_idx(ep)).new_ID,2) > size(remapping_raw(target_epoch_idx).new_ID,2) %if there are more cells in RUN than in the other field (i.e. PRE/POST)
         [~,idx1,idx2] = intersect(remapping_raw(epoch_idx(ep)).new_ID,remapping_raw(target_epoch_idx).new_ID);
         % Prepare colormap
         min_val = -edge_val; % min(remapping(epoch_idx(ep)).place_field_diff(idx1));
@@ -87,7 +87,7 @@ for ep =  1 : length(epochs)
         max_val = edge_val;  % max(remapping(target_epoch_idx).place_field_diff(idx1));
         steps = min_val:step_size:max_val;
         steps(end+1) = steps(end) + step_size;
-        temp=remapping(target_epoch_idx).place_field_diff(idx1);
+        temp=remapping(target_epoch_idx).place_field_diff(idx2);
         temp(temp<min_val) = min_val;
         temp(temp>max_val) = max_val;
         [~,~,bins] = histcounts(temp,steps);
