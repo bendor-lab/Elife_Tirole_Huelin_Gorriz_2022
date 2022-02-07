@@ -14,7 +14,7 @@ function plot_correlation_RUN_SLEEP(varargin)
 
 available_controls= {'fixed_rate','fixed_spike_count','global_remapped','rate_remapped',...
                                 'rate_detection_control','rate_intrinsic_bias_control',...
-                                'replay_rate_shuffle_control'};
+                                'replay_rate_shuffle_control','replay_rate_shuffle_detection'};
 available_scoring= {'wcorr','spearman'};
 
 p= inputParser;
@@ -42,6 +42,8 @@ else
             load(['.\CONTROLS\rate_remapped\' filename '.mat']);
         case 'replay_rate_shuffle_control'
             load(['.\CONTROLS\replay_rate_shuffle\' filename '_REPLAY_RATE.mat']);
+        case 'replay_rate_shuffle_detection'
+            load(['.\CONTROLS\replay_rate_shuffle\' filename '_REPLAY_RATE_DETECTION.mat']);
         otherwise
             load(['.\CONTROLS\' p.Results.control '\' filename '.mat']);
     end
