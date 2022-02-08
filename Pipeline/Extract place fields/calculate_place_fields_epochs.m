@@ -262,12 +262,21 @@ for track_id= 1:length(position.linear)
     end
 end
 if isempty(varargin)
-    place_fields.good_place_cells= place_fields_BAYESIAN.good_place_cells;
-    place_fields.good_place_cells_LIBERAL= place_fields_BAYESIAN.good_place_cells_LIBERAL;
-    place_fields.unique_cells= place_fields_BAYESIAN.unique_cells;
-    place_fields.unique_cells= place_fields_BAYESIAN.unique_cells;
-    place_fields.pyramidal_cells= place_fields_BAYESIAN.pyramidal_cells;
-    place_fields.other_cells= place_fields_BAYESIAN.other_cells;
+    if x_bins_width == parameters.x_bins_width_bayesian
+        place_fields.good_place_cells= place_fields_BAYESIAN.good_place_cells;
+        place_fields.good_place_cells_LIBERAL= place_fields_BAYESIAN.good_place_cells_LIBERAL;
+        place_fields.unique_cells= place_fields_BAYESIAN.unique_cells;
+        place_fields.unique_cells= place_fields_BAYESIAN.unique_cells;
+        place_fields.pyramidal_cells= place_fields_BAYESIAN.pyramidal_cells;
+        place_fields.other_cells= place_fields_BAYESIAN.other_cells;
+    elseif x_bins_width == parameters.x_bins_width
+        place_fields.good_place_cells= place_fields.good_place_cells;
+        place_fields.good_place_cells_LIBERAL= place_fields.good_place_cells_LIBERAL;
+        place_fields.unique_cells= place_fields.unique_cells;
+        place_fields.unique_cells= place_fields.unique_cells;
+        place_fields.pyramidal_cells= place_fields.pyramidal_cells;
+        place_fields.other_cells= place_fields.other_cells;
+    end
 else
     if strcmp(varargin{1},'global_remap')
         place_fields.good_place_cells= place_fields_GLOBAL_REMAPPED.good_place_cells;

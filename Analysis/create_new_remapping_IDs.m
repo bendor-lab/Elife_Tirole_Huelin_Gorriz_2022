@@ -29,7 +29,12 @@
  elseif ~ (isempty(session) && isempty(original_cell_ID))
     
     load('X:\BendorLab\Drobo\Neural and Behavioural Data\Rate remapping\Data\folders_to_process_remapping.mat')
-    idx =  find(arrayfun(@(x) contains(session,folders{x}), 1:length(folders))); % index session ID
+    if size(session,1) > 1
+        idx_sess = cell2mat(arrayfun(@(x) contains(session,folders{x})'*x, 1:length(folders),'UniformOutput',0)); % index session ID
+    else
+        idx_sess =  find(arrayfun(@(x) contains(session,folders{x}), 1:length(folders))); % index session ID
+    end
+    idx_sess(idx_sess == 0) = []; %remove all zeros
     if ischar(session)  % if only one string and a vector of cell IDs convert
         session= {session}; 
     end
@@ -40,14 +45,19 @@
             session{j} = session{j}(indx(end)+1:end);
         end
         % find folder index number in remapping structure
-        %idx= find(strcmp(remapping(1).folder, session{j}));
-            if iscell(original_cell_ID)
-                new_ID{j} = original_cell_ID{j} + (1000 * idx); 
-            elseif length(session)==1 && length(original_cell_ID) >1
-                new_ID = original_cell_ID + (1000 * idx); 
-            else
-                new_ID(j) = original_cell_ID(j) + (1000 * idx); 
-            end
+        %idx = find(strcmp(remapping(1).folder, session{j}));
+        if length(idx_sess) > 1
+            idx = idx_sess(j);
+        else
+            idx = idx_sess;
+        end
+        if iscell(original_cell_ID)
+            new_ID{j} = original_cell_ID{j} + (1000 * idx);
+        elseif length(session)==1 && length(original_cell_ID) >1
+            new_ID = original_cell_ID + (1000 * idx);
+        else
+            new_ID(j) = original_cell_ID(j) + (1000 * idx);
+        end
     end
     % for ease of use if only one folder reconvert to array
 %     if length(session)==1 && ~iscell(original_cell_ID)
