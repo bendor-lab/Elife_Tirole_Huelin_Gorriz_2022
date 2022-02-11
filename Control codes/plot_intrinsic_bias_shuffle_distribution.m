@@ -1,6 +1,9 @@
-function plot_intrinsic_bias_shuffle_distribution(file_location)
-% options: 'rate_bias' for the track peak rate shuffle
- %                   'replay_rate_bias' for the replay peak rate shuffle
+function plot_intrinsic_bias_shuffle_distribution(shuffle_type)
+% Plots shuffle distribution of F-statistics for either the Track peak rate
+% shuffle or the Replay peak rate shuffle.
+% INPUT
+% Shuffle_type: 'rate_bias' to select data from track peak rate shuffle
+%               'replay_rate_bias' to select data from replay peak rate shuffle
 
 % Load real correlation
 [~,F_real] = plot_rate_remapping_NEW('x_var',{'place_field_diff'},'y_var',{'mean_max_FR_replay_diff'},...
@@ -8,14 +11,14 @@ function plot_intrinsic_bias_shuffle_distribution(file_location)
 close(gcf)
 
 % Load shuffle distribution & correlation
-if strcmp(file_location,'rate_bias')
+if strcmp(shuffle_type,'rate_bias')
     load([pwd '\CONTROLS\rate_remapped\intrinsic_rate_bias_shuffle_dist.mat'])
     fig_name=  'Track peak rate shuffle - Intrinsic bias';
     bias_shuffle_dist= intrinsic_rate_bias_shuffle_dist;
     [pval,F] = plot_rate_remapping_NEW('x_var',{'place_field_diff'},'y_var',{'mean_max_FR_replay_diff'},'epochs',{'PRE','POST'},...
                                                             'control','rate_intrinsic_bias_control','subset','stable cells laps',...
                                                             'x_label','Peak Rate Change (Hz)','y_label','Replay Rate Change (Hz)');
-elseif strcmp(file_location,'replay_rate_bias')
+elseif strcmp(shuffle_type,'replay_rate_bias')
     load([pwd '\CONTROLS\replay_rate_shuffle\intrinsic_replay_rate_bias_shuffle_dist.mat'])
     fig_name=  'Replay peak rate shuffle - Intrinsic bias';
     bias_shuffle_dist= intrinsic_replay_rate_bias_shuffle_dist;
