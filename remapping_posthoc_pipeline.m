@@ -30,8 +30,6 @@ plot_control_track_peakFR() % increase track PeakFR threshold
 plot_correlation_sleep_evolution(folders,'wcorr', 'POST','events')
 plot_rate_remapping_NEW('subset','stable cells laps','epoch',{'awakePOST','sleepPOST'},...
                                                 'x_label','peak in-field rate difference (Hz)','y_label','peak replay rate difference (Hz)');
-plot_rate_remapping_NEW('subset',{'stable cells laps','rate modulated cells'},'epoch',{'PRE','POST'},...
-                                                'x_label','peak in-field rate difference (Hz)','y_label','peak replay rate difference (Hz)');
 plot_correlation_RUN_evolution(folders, 'wcorr', 'cumulative_laps')
                                            
 % Plotting
@@ -40,6 +38,7 @@ get_distributions_tracks_replay(varagin) % NEEDS UPDATE - plots FR distributions
 summary_data(folders,option) % summary table
 num_events = calculate_number_replay_events;
 
+get_corr_tracks(folders,'method','pop_vector');
 
 % GLMs/Regressions
 prepare_data_for_regression(varargin); % under construction
@@ -51,13 +50,17 @@ get_firing_stats_replay(folders,method);
 compare_track_FR % Quick comparison of peak FR distributions between tracks
 
 % Awake replay on track (RUN)
-plot_correlation_RUN_SLEEP('epochs',{'PRE','POST'},'target_epoch',{'RUN'},'vars','mean_max_FR_replay_diff');
+plot_correlation_RUN_SLEEP('epochs',{'PRE','POST'},'target_epoch',{'RUN'},'vars','mean_max_FR_replay_diff'); %main
+plot_correlation_RUN_SLEEP('epochs',{'PRE','POST'},'target_epoch',{'RUN'},'vars','mean_max_FR_replay_diff','scoring','spearman'); %spearman
+plot_correlation_RUN_SLEEP('epochs',{'PRE','POST'},'target_epoch',{'RUN'},'vars','mean_max_FR_replay_diff','control','rate_detection_control'); % track peak rate shuffle
+plot_correlation_RUN_SLEEP('epochs',{'PRE','POST'},'target_epoch',{'RUN'},'vars','mean_max_FR_replay_diff','control','replay_rate_shuffle_detection'); % replay rate shuffle
 
 % get examples of raw data with couple cells highlighted
 example_neuron_raw_data('cell_id',[5097 5029]);
 plot_confusion_matrices;
 
 %%% SHUFFLES %%%
+plot_intrinsic_bias_shuffle_distribution(shuffle_type)
 
 % SPEARMAN
 rate_remapping_TRACK_PAIRS(folders,'spearman');
@@ -82,27 +85,19 @@ plot_rate_remapping_NEW('x_var',{'place_field_diff'},'y_var',{'mean_max_FR_repla
                                                             'x_label','peak in-field rate difference (Hz)','y_label','peak replay rate difference (Hz)');
 
                                                         
-%% individual rats
-% RAT2
-rat_folder= folders([2 3],:);
-remapping= rate_remapping_TRACK_PAIRS(rat_folder,'wcorr');
+%% individual sessions
+for i=1:length(folders)
+rat_folder= folders(i,1);
+i
+remapping= rate_remapping_TRACK_PAIRS(rat_folder,'wcorr',0);
 plot_rate_remapping_NEW('use_mat',remapping,'subset','stable cells laps',...
                         'epoch',{'PRE','POST'},...
                         'x_label','peak in-field rate difference (Hz)',...
                         'y_label','peak replay rate difference (Hz)');
-                
-% RAT4
-rat_folder= folders([7 8],:);
-remapping= rate_remapping_TRACK_PAIRS(rat_folder,'wcorr');
-plot_rate_remapping_NEW('use_mat',remapping,'subset','stable cells laps',...
-                        'epoch',{'PRE','POST'},...
-                        'x_label','peak in-field rate difference (Hz)',...
-                        'y_label','peak replay rate difference (Hz)');
-                    
-% RAT5
-rat_folder= folders([9 10],:);
-remapping= rate_remapping_TRACK_PAIRS(rat_folder,'wcorr');
-plot_rate_remapping_NEW('use_mat',remapping,'subset','stable cells laps',...
-                        'epoch',{'PRE','POST'},...
-                        'x_label','peak in-field rate difference (Hz)',...
-                        'y_label','peak replay rate difference (Hz)');
+% ax= get(gcf,'children');
+% set([ax(:)],'plotboxaspectratio',[1.3 1 1]);
+% ylim([ax(:)],[-3 3]); yticks([ax(:)],[-3 0 3]); yticklabels([ax(:)],[-3 0 3]);
+% xlim([ax(:)],[-30 30]); xticks([ax(:)],[-30:15:30]); xticklabels([ax(:)],[-30:15:30]);
+% saveas(gcf,['..\Figures\Single session correlations\session' num2str(i) '.pdf']);
+close(gcf);
+end
